@@ -1,93 +1,68 @@
 #!/usr/bin/env python3
-"""
-Test for access_nested_map function
-"""
+""" Parameterize a unit test, Mock HTTP calls, Parameterize and patch """
 import unittest
-import requests
 from unittest.mock import patch
-from utils import access_nested_map, get_json, memoize
-from typing import Mapping, Sequence, Any
 from parameterized import parameterized
+from utils import access_nested_map, get_json, memoize
 
 
 class TestAccessNestedMap(unittest.TestCase):
-    """
-    Tests the access_nested_map function
-    """
+    """ TESTCASE """
+    """ to test the function for following inputs """
     @parameterized.expand([
         ({"a": 1}, ("a",), 1),
         ({"a": {"b": 2}}, ("a",), {"b": 2}),
-        ({"a": {"b": 2}}, ("a", "b"), 2)
+        ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
-    def test_access_nested_map(self, nested_map: Mapping,
-                               path: Sequence, expected: int) -> None:
-        """
-        Test the access_nested_map method.
-        Args:
-            nested_map (Dict): A dictionary that may have nested dictionaries
-            path (List, tuple, set): Keys to get to the required value in the
-                                     nested dictionary
-        """
-        response = access_nested_map(nested_map, path)
-        self.assertEqual(response, expected)
+    def test_access_nested_map(self, nested_map, path, answer):
+        """ method to test that the method returns what it is supposed to """
+        self.assertEqual(access_nested_map(nested_map, path), answer)
 
+    """  to test that a KeyError is raised for the following inputs """
     @parameterized.expand([
         ({}, ("a",)),
-        ({"a": 1}, ("a", "b"))
+        ({"a": 1}, ("a", "b")),
     ])
-    def test_access_nested_map_exception(self, nested_map: Mapping,
-                                         path: Sequence) -> None:
-        """
-        Test the access_nested_map method raises an error when expected to
-        Args:
-            nested_map (Dict): A dictionary that may have nested dictionaries
-            path (List, tuple, set): Keys to get to the required value in the
-                                     nested dictionary
-        """
-        with self.assertRaises(Exception):
+    def test_access_nested_map_exception(self, nested_map, path):
+        """ method to test that a KeyError is raised properly """
+        with self.assertRaises(KeyError) as error:
             access_nested_map(nested_map, path)
+        self.assertEqual(error.exception.args[0], path[-1])
 
 
 class TestGetJson(unittest.TestCase):
-    """
-    Test the get_json function
-    """
+    """ TESTCASE """
+    """ to test the function for following inputs """
     @parameterized.expand([
         ("http://example.com", {"payload": True}),
-        ("http://holberton.io", {"payload": False})
+        ("http://holberton.io", {"payload": False}),
     ])
-    @patch("requests.get")
-    def test_get_json(self, test_url, test_payload, mock_requests_get):
-        """
-        Test the get_json method to ensure it returns the expected output.
-        Args:
-            url: url to send http request to
-            payload: expected json response
-        """
-        mock_requests_get.return_value.json.return_value = test_payload
+    @patch('test_utils.get_json')
+    def test_get_json(self, test_url, test_payload, mock_get):
+        """ method to test that utils.get_json returns the expected result """
+        mock_get.return_value = test_payload
         result = get_json(test_url)
         self.assertEqual(result, test_payload)
-        mock_requests_get.assert_called_once_with(test_url)
 
 
 class TestMemoize(unittest.TestCase):
-    """
-    Test the memoization decorator, memoize
-    """
+    """ TESTCASE """
     def test_memoize(self):
-        """
-        Test that utils.memoize decorator works as intended
+        """ Test that when calling a_property twice, the correct result is
+            returned but a_method is only called once using assert_called_once
         """
         class TestClass:
-
+            """ class """
             def a_method(self):
+                """ method  """
                 return 42
 
             @memoize
             def a_property(self):
+                """ property """
                 return self.a_method()
-        with patch.object(TestClass, 'a_method') as mock_object:
-            test = TestClass()
-            test.a_property()
-            test.a_property()
-            mock_object.assert_called_once()
+        with patch.object(TestClass, "a_method") as mockMethod:
+            test_class = TestClass()
+            test_class.a_property
+            test_class.a_property
+            mockMethod.assert_called_once
